@@ -1,8 +1,12 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  darkMode: 'class',
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+      },
       typography: {
         DEFAULT: {
           css: {
@@ -28,6 +32,10 @@ export default {
           DEFAULT: "#7c3aed",
           subtle: "#ede9fe",
           ink: "#5b21b6",
+        },
+        neon: {
+          green: "#00ff41",
+          violet: "#a855f7",
         },
       },
     },
