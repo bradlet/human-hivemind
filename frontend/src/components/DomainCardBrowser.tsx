@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { forwardRef, useLayoutEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen } from "lucide-react";
@@ -45,88 +45,6 @@ export function getDomainGradient(slug: string): string {
 }
 
 // ────────────────────────────────────────────────────────────────────────────────
-// Electric lines connector
-// ────────────────────────────────────────────────────────────────────────────────
-
-function ElectricLines({ count }: { count: number }) {
-  if (count <= 0) return null;
-  const width = 1000;
-  const height = 80;
-  const topX = width / 2;
-  const topY = 0;
-  // Compute evenly spaced bottom anchor points across the full width
-  const positions = Array.from({ length: count }, (_, i) => {
-    if (count === 1) return width / 2;
-    const margin = width / (count + 1);
-    return margin * (i + 1);
-  });
-
-  return (
-    <div
-      className="relative w-full pointer-events-none"
-      style={{ height: `${height}px` }}
-      aria-hidden
-    >
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="none"
-        className="absolute inset-0 w-full h-full"
-      >
-        {/* Top source dot */}
-        <motion.circle
-          cx={topX}
-          cy={topY + 2}
-          r={4}
-          fill="#a855f7"
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4 }}
-          style={{ filter: "drop-shadow(0 0 6px #a855f7)" }}
-        />
-
-        {positions.map((x, i) => {
-          const midY = height * 0.55;
-          // Slight curve via cubic Bezier — bow outwards
-          const d = `M ${topX} ${topY} C ${topX} ${midY}, ${x} ${midY}, ${x} ${height}`;
-          return (
-            <g key={i}>
-              <motion.path
-                d={d}
-                stroke="#a855f7"
-                strokeWidth={1.5}
-                fill="none"
-                strokeLinecap="round"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 0.9 }}
-                transition={{
-                  duration: 0.6,
-                  delay: i * 0.08,
-                  ease: "easeOut",
-                }}
-                style={{
-                  filter:
-                    "drop-shadow(0 0 6px #a855f7) drop-shadow(0 0 12px #a855f7)",
-                }}
-              />
-              <motion.circle
-                cx={x}
-                cy={height - 2}
-                r={3}
-                fill="#a855f7"
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: i * 0.08 + 0.5 }}
-                style={{ filter: "drop-shadow(0 0 4px #a855f7)" }}
-              />
-            </g>
-          );
-        })}
-      </svg>
-    </div>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────────────────────
 // Card
 // ────────────────────────────────────────────────────────────────────────────────
 
@@ -137,12 +55,16 @@ interface DomainCardProps {
   isSubject?: boolean;
 }
 
-function DomainCard({ node, isExpanded, onClick, isSubject }: DomainCardProps) {
+const DomainCard = forwardRef<HTMLDivElement, DomainCardProps>(function DomainCard(
+  { node, isExpanded, onClick, isSubject },
+  ref,
+) {
   const navigate = useNavigate();
 
   if (isSubject) {
     return (
       <motion.div
+        ref={ref}
         layout
         whileHover={{ y: -2 }}
         onClick={() => navigate(`/s/${node.slug}`)}
@@ -164,10 +86,10 @@ function DomainCard({ node, isExpanded, onClick, isSubject }: DomainCardProps) {
   }
 
   const gradient = getDomainGradient(node.slug);
-  const childCount = node.children.length;
 
   return (
     <motion.div
+      ref={ref}
       layout
       whileHover={{ y: -3 }}
       onClick={onClick}
@@ -179,7 +101,6 @@ function DomainCard({ node, isExpanded, onClick, isSubject }: DomainCardProps) {
           : "hover:ring-2 hover:ring-accent/70 hover:ring-offset-2 hover:ring-offset-ink-50 dark:hover:ring-offset-ink-950",
       ].join(" ")}
     >
-      {/* Optional background image — only visible if it loads */}
       <img
         src={`/api/images/domains/${node.slug}`}
         onLoad={(e) => {
@@ -192,7 +113,6 @@ function DomainCard({ node, isExpanded, onClick, isSubject }: DomainCardProps) {
         alt=""
       />
 
-      {/* Subtle grid texture */}
       <div
         className="absolute inset-0 opacity-[0.08] pointer-events-none mix-blend-overlay"
         style={{
@@ -202,16 +122,13 @@ function DomainCard({ node, isExpanded, onClick, isSubject }: DomainCardProps) {
         }}
       />
 
-      {/* Glow blob top-right */}
       <div
         className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-30 blur-3xl pointer-events-none group-hover:opacity-50 transition-opacity duration-500"
         style={{ background: "#a855f7" }}
       />
 
-      {/* Vignette */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
 
-      {/* Top-right "View list" link */}
       <Link
         to={`/d/${node.slug}`}
         onClick={(e) => e.stopPropagation()}
@@ -220,20 +137,14 @@ function DomainCard({ node, isExpanded, onClick, isSubject }: DomainCardProps) {
         View list &rarr;
       </Link>
 
-      {/* Bottom-left content */}
       <div className="absolute left-5 right-5 bottom-5 z-10">
-        <div className="text-[10px] uppercase tracking-[0.3em] text-white/50 mb-1.5">
-          {childCount > 0
-            ? `${childCount} ${childCount === 1 ? "topic" : "topics"}`
-            : node.slug}
-        </div>
         <div className="text-2xl font-semibold text-white drop-shadow-lg leading-tight">
           {node.title}
         </div>
       </div>
     </motion.div>
   );
-}
+});
 
 // ────────────────────────────────────────────────────────────────────────────────
 // Browser
@@ -243,22 +154,111 @@ interface DomainCardBrowserProps {
   nodes: DomainNode[];
 }
 
+interface ComputedLines {
+  source: { x: number; y: number } | null;
+  paths: Array<{ d: string; x: number; y: number }>;
+  key: string;
+}
+
 export default function DomainCardBrowser({ nodes }: DomainCardBrowserProps) {
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
   const navigate = useNavigate();
   const expandedNode = nodes.find((n) => n.slug === expandedSlug) ?? null;
 
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const parentRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  // Scoped per parent slug so a cross-fade between two expansions can't have
+  // their child refs collide on the same array indices.
+  const childRefs = useRef<Record<string, (HTMLDivElement | null)[]>>({});
+
+  const [lines, setLines] = useState<ComputedLines>({
+    source: null,
+    paths: [],
+    key: "",
+  });
+
+  // Compute connector paths from the clicked parent card to each child card,
+  // all expressed in the wrapper div's local coordinate space. Wrapper is the
+  // shared positioned ancestor for both the parent grid AND the expanded row,
+  // so a single SVG positioned absolutely inside it can render the lines
+  // without being clipped by the height-animating <motion.div> below.
+  useLayoutEffect(() => {
+    if (!expandedNode) {
+      setLines({ source: null, paths: [], key: "" });
+      return;
+    }
+
+    const compute = () => {
+      const wrapper = wrapperRef.current;
+      if (!wrapper) return;
+      const wrapperRect = wrapper.getBoundingClientRect();
+      const parentEl = parentRefs.current[expandedNode.slug];
+
+      let sourceX = wrapper.offsetWidth / 2;
+      let sourceY = 0;
+      if (parentEl) {
+        const pRect = parentEl.getBoundingClientRect();
+        sourceX = pRect.left + pRect.width / 2 - wrapperRect.left;
+        sourceY = pRect.bottom - wrapperRect.top;
+      }
+
+      const refs = childRefs.current[expandedNode.slug] ?? [];
+
+      // Establish the first-row baseline from the first attached child. Using
+      // the smallest non-null offsetTop in the array makes us robust against
+      // brief layout shifts during expansion.
+      let firstRowTop: number | null = null;
+      for (const el of refs) {
+        if (!el) continue;
+        const top = el.getBoundingClientRect().top - wrapperRect.top;
+        if (firstRowTop === null || top < firstRowTop) firstRowTop = top;
+      }
+
+      const paths: Array<{ d: string; x: number; y: number }> = [];
+      for (let i = 0; i < expandedNode.children.length; i++) {
+        const el = refs[i];
+        if (!el) continue;
+        const elRect = el.getBoundingClientRect();
+        const targetY = elRect.top - wrapperRect.top;
+        if (firstRowTop !== null && targetY > firstRowTop + 4) continue;
+        const targetX = elRect.left + elRect.width / 2 - wrapperRect.left;
+        const midY = sourceY + (targetY - sourceY) * 0.55;
+        const d = `M ${sourceX} ${sourceY} C ${sourceX} ${midY}, ${targetX} ${midY}, ${targetX} ${targetY}`;
+        paths.push({ d, x: targetX, y: targetY });
+      }
+      setLines({
+        source: { x: sourceX, y: sourceY },
+        paths,
+        key: expandedNode.slug,
+      });
+    };
+
+    compute();
+
+    const ro = new ResizeObserver(compute);
+    if (wrapperRef.current) ro.observe(wrapperRef.current);
+    const parentEl = parentRefs.current[expandedNode.slug];
+    if (parentEl) ro.observe(parentEl);
+    (childRefs.current[expandedNode.slug] ?? []).forEach(
+      (el) => el && ro.observe(el),
+    );
+    return () => ro.disconnect();
+  }, [expandedNode]);
+
   return (
-    <div className="space-y-2">
+    <div ref={wrapperRef} className="relative space-y-2">
+      {/* Parent row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {nodes.map((node) => (
           <DomainCard
             key={node.slug}
+            ref={(el) => {
+              parentRefs.current[node.slug] = el;
+            }}
             node={node}
             isExpanded={expandedSlug === node.slug}
             onClick={() => {
               if (node.children.length === 0) {
-                // Top-level node with no children — navigate to domain page
                 navigate(`/d/${node.slug}`);
                 return;
               }
@@ -270,7 +270,68 @@ export default function DomainCardBrowser({ nodes }: DomainCardBrowserProps) {
         ))}
       </div>
 
-      <AnimatePresence initial={false}>
+      {/* Connector SVG — sibling of (not inside) the height-animated wrapper,
+          so it isn't clipped by overflow:hidden during expand/collapse. */}
+      {expandedNode && (
+        <svg
+          aria-hidden
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          style={{ overflow: "visible" }}
+        >
+          {lines.source && (
+            <motion.circle
+              key={`${lines.key}-src`}
+              cx={lines.source.x}
+              cy={lines.source.y}
+              r={4}
+              fill="#a855f7"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+              style={{ filter: "drop-shadow(0 0 6px #a855f7)" }}
+            />
+          )}
+          {lines.paths.map((p, i) => (
+            <g key={`${lines.key}-${i}`}>
+              <motion.path
+                d={p.d}
+                stroke="#a855f7"
+                strokeWidth={1.5}
+                fill="none"
+                strokeLinecap="round"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 0.9 }}
+                transition={{
+                  duration: 0.6,
+                  delay: i * 0.08,
+                  ease: "easeOut",
+                }}
+                style={{
+                  filter:
+                    "drop-shadow(0 0 6px #a855f7) drop-shadow(0 0 12px #a855f7)",
+                }}
+              />
+              <motion.circle
+                cx={p.x}
+                cy={p.y}
+                r={3}
+                fill="#a855f7"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: i * 0.08 + 0.5 }}
+                style={{ filter: "drop-shadow(0 0 4px #a855f7)" }}
+              />
+            </g>
+          ))}
+        </svg>
+      )}
+
+      {/* Expanded children — height-animated. No SVG inside.
+          mode="popLayout" drops the exiting wrapper out of layout flow
+          immediately so the entering one snaps to its final slot on the
+          first frame; this gives the layout effect correct positions for
+          the new children without waiting for the exit animation. */}
+      <AnimatePresence initial={false} mode="popLayout">
         {expandedNode && expandedNode.children.length > 0 && (
           <motion.div
             key={expandedNode.slug}
@@ -280,37 +341,44 @@ export default function DomainCardBrowser({ nodes }: DomainCardBrowserProps) {
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <ElectricLines count={expandedNode.children.length} />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 pt-2 pb-4">
-              {expandedNode.children.map((child) => {
-                const isSubject = child.children.length === 0;
-                return (
-                  <motion.div
-                    key={child.slug}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      duration: 0.4,
-                      delay: 0.2,
-                      ease: "easeOut",
-                    }}
-                  >
-                    <DomainCard
-                      node={child}
-                      isExpanded={false}
-                      isSubject={isSubject}
-                      onClick={() => {
-                        // Children navigate rather than further nesting
-                        if (isSubject) {
-                          navigate(`/s/${child.slug}`);
-                        } else {
-                          navigate(`/d/${child.slug}`);
+            <div className="pt-20 pb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {expandedNode.children.map((child, i) => {
+                  const isSubject = child.children.length === 0;
+                  const slug = expandedNode.slug;
+                  return (
+                    <motion.div
+                      key={child.slug}
+                      ref={(el) => {
+                        if (!childRefs.current[slug]) {
+                          childRefs.current[slug] = [];
                         }
+                        childRefs.current[slug][i] = el;
                       }}
-                    />
-                  </motion.div>
-                );
-              })}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: 0.4,
+                        delay: 0.2,
+                        ease: "easeOut",
+                      }}
+                    >
+                      <DomainCard
+                        node={child}
+                        isExpanded={false}
+                        isSubject={isSubject}
+                        onClick={() => {
+                          if (isSubject) {
+                            navigate(`/s/${child.slug}`);
+                          } else {
+                            navigate(`/d/${child.slug}`);
+                          }
+                        }}
+                      />
+                    </motion.div>
+                  );
+                })}
+              </div>
             </div>
           </motion.div>
         )}

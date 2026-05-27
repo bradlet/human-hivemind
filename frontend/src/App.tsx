@@ -2,6 +2,7 @@ import { Link, Route, Routes } from "react-router-dom";
 import useSWR from "swr";
 import { Moon, Sun } from "lucide-react";
 import Home from "./routes/Home";
+import Browse from "./routes/Browse";
 import DomainView from "./routes/Domain";
 import Subject from "./routes/Subject";
 import LessonView from "./routes/Lesson";
@@ -23,7 +24,7 @@ export default function App() {
           </Link>
           <nav className="flex items-center gap-4 text-sm">
             <Link
-              to="/"
+              to="/browse"
               className="text-ink-700 hover:text-ink-900 dark:text-ink-300 dark:hover:text-ink-50"
             >
               Browse
@@ -43,6 +44,7 @@ export default function App() {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/browse" element={<Browse />} />
           <Route path="/d/:slug" element={<DomainView />} />
           <Route path="/s/:slug" element={<Subject />} />
           <Route path="/s/:slug/l/:order" element={<LessonView />} />

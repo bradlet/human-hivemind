@@ -6,13 +6,7 @@ import {
   useMotionValue,
   useTransform,
 } from "framer-motion";
-import {
-  BookOpen,
-  Cpu,
-  GitFork,
-  ChevronDown,
-  Clock,
-} from "lucide-react";
+import { BookOpen, Cpu, GitFork, ChevronDown } from "lucide-react";
 import { api } from "../lib/api";
 import BrainSVG from "../components/BrainSVG";
 import MatrixCanvas from "../components/MatrixCanvas";
@@ -96,9 +90,6 @@ export default function Home() {
     };
   }, [progressMV]);
 
-  const featured = useSWR(["subjects", { sort: "updated_at" as const }], () =>
-    api.listSubjects({ sort: "updated_at" }),
-  );
   const domains = useSWR("domains", api.domains);
 
   return (
@@ -168,7 +159,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.55, duration: 0.9 }}
-                className="text-4xl md:text-6xl font-light tracking-tight text-ink-900 dark:text-ink-50 leading-[1.05]"
+                className="text-4xl md:text-6xl font-light tracking-tight text-ink-50 leading-[1.05] [text-shadow:_0_2px_24px_rgba(0,0,0,0.6)]"
               >
                 Knowledge, structured.{" "}
                 <span className="text-accent dark:text-neon-violet">
@@ -179,7 +170,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8, duration: 0.9 }}
-                className="mt-6 text-base md:text-lg text-ink-600 dark:text-ink-300 max-w-2xl mx-auto"
+                className="mt-6 text-base md:text-lg text-ink-200 max-w-2xl mx-auto [text-shadow:_0_1px_16px_rgba(0,0,0,0.7)]"
               >
                 A free, open-source platform where anyone can learn anything —
                 and where every course doubles as structured knowledge for AI.
@@ -190,7 +181,7 @@ export default function Home() {
           {/* Scroll hint */}
           <motion.div
             style={{ opacity: scrollHintOpacity }}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-ink-500 dark:text-ink-400 text-xs uppercase tracking-[0.3em]"
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-ink-300 text-xs uppercase tracking-[0.3em]"
           >
             <span>Scroll to explore</span>
             <motion.span
@@ -246,50 +237,23 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─────────────────────────────────── DOMAIN BROWSER (Agent 2) ─────────────────────────────── */}
+      {/* ─────────────────────────────────── DOMAIN BROWSER PREVIEW ─────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-4 py-16">
-        <div className="mb-8">
-          <h2 className="text-3xl font-semibold dark:text-ink-100 tracking-tight">Browse by Domain</h2>
-          <p className="mt-2 text-sm text-ink-500 dark:text-ink-400">
-            Click a domain to explore what's inside. Click "View list" for the traditional view.
-          </p>
+        <div className="mb-8 flex items-end justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="text-3xl font-semibold dark:text-ink-100 tracking-tight">Browse by Domain</h2>
+            <p className="mt-2 text-sm text-ink-500 dark:text-ink-400">
+              Click a domain to explore what's inside. Click "View list" for the traditional view.
+            </p>
+          </div>
+          <Link
+            to="/browse"
+            className="text-sm text-accent dark:text-neon-violet hover:underline whitespace-nowrap"
+          >
+            See full browse &rarr;
+          </Link>
         </div>
         {domains.data && <DomainCardBrowser nodes={domains.data.domains} />}
-      </section>
-
-      {/* ─────────────────────────────────────── RECENTLY UPDATED ─────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-4 py-16">
-        <div className="flex items-center gap-2 mb-6">
-          <Clock size={16} className="text-accent dark:text-neon-violet" />
-          <h2 className="text-2xl font-semibold tracking-tight text-ink-900 dark:text-ink-50">
-            Recently updated
-          </h2>
-        </div>
-
-        {featured.isLoading && (
-          <div className="text-ink-400 dark:text-ink-500">Loading…</div>
-        )}
-
-        <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {featured.data?.map((s) => (
-            <li key={s.slug}>
-              <Link
-                to={`/s/${s.slug}`}
-                className="block bg-white dark:bg-ink-900 border border-ink-200 dark:border-ink-800 hover:border-accent/40 dark:hover:border-accent/60 rounded-xl p-5 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-accent/5"
-              >
-                <div className="font-medium text-lg text-ink-900 dark:text-ink-50 leading-snug">
-                  {s.title}
-                </div>
-                <div className="mt-4 flex flex-wrap gap-1.5">
-                  <Pill>{s.difficulty}</Pill>
-                  <Pill>{s.estimated_hours}h</Pill>
-                  <Pill>v{s.version}</Pill>
-                  <Pill className="capitalize">{s.status}</Pill>
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
       </section>
     </div>
   );
@@ -319,21 +283,3 @@ function FeatureCard({
   );
 }
 
-function Pill({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <span
-      className={
-        "inline-flex items-center text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-ink-200 dark:border-ink-700 text-ink-600 dark:text-ink-300 bg-ink-50 dark:bg-ink-800/60 " +
-        (className ?? "")
-      }
-    >
-      {children}
-    </span>
-  );
-}
