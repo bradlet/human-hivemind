@@ -5,7 +5,7 @@ type Props = {
   className?: string;
 };
 
-const FONT_SIZE = 14;
+const FONT_SIZE = 20;
 const TRAIL_FADE = "rgba(0, 0, 0, 0.05)";
 const RAIN_COLOR = "#00ff41";
 

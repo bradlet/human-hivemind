@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import useSWR from "swr";
 import {
   motion,
   useMotionValue,
   useTransform,
-  useMotionValueEvent,
 } from "framer-motion";
 import {
   BookOpen,
@@ -27,13 +26,13 @@ export default function Home() {
   const progressMV = useMotionValue(0);
 
   const rotateY = useTransform(progressMV, [0, 1], [0, 180]);
-  const matrixOpacityMV = useTransform(progressMV, [0, 0.8, 1.0], [0.85, 0.85, 0]);
   const brainScale = useTransform(progressMV, [0, 0.5, 1.0], [0.9, 1.05, 0.95]);
   const scrollHintOpacity = useTransform(progressMV, [0, 0.2], [1, 0]);
   const headlineY = useTransform(progressMV, [0, 1], [0, -40]);
 
-  const [matrixOpacity, setMatrixOpacity] = useState(0.85);
-  useMotionValueEvent(matrixOpacityMV, "change", (v) => setMatrixOpacity(v));
+  // Matrix rain holds a constant opacity for the lifetime of the hero so it
+  // stays visible when the user scrolls back up to the top.
+  const MATRIX_OPACITY = 0.85;
 
   useEffect(() => {
     const WHEEL_SENSITIVITY = 0.0015;
@@ -108,7 +107,7 @@ export default function Home() {
       <section className="relative h-screen">
         <div className="absolute inset-0 flex items-center justify-center overflow-hidden dark:bg-ink-950 bg-gradient-to-b from-ink-50 to-ink-100 dark:from-ink-950 dark:to-ink-900">
           {/* Matrix rain backdrop */}
-          <MatrixCanvas opacity={matrixOpacity} />
+          <MatrixCanvas opacity={MATRIX_OPACITY} />
 
           {/* Radial atmospheric overlays */}
           <div
