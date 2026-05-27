@@ -1,0 +1,19 @@
+key_formulas:
+  - name: perceptron
+    expression: "y = sigma(w . x + b)"
+  - name: sigmoid
+    expression: "sigma(z) = 1 / (1 + e^-z)"
+    notes: "Squashes any real number into (0, 1); derivative sigma'(z) = sigma(z)*(1 - sigma(z))."
+  - name: two-layer forward pass
+    expression: "h = sigma(W_1 x + b_1); y = sigma(W_2 h + b_2)"
+  - name: mean squared error loss
+    expression: "L = (1/N) sum_i (y_hat_i - y_i)^2"
+  - name: gradient descent update
+    expression: "theta_{t+1} = theta_t - eta * grad_theta L"
+key_theorems:
+  - name: universal approximation theorem (Hornik, 1991)
+    statement: "A feedforward network with a single hidden layer using a non-polynomial activation can approximate any continuous function on a compact subset of R^n to arbitrary accuracy."
+numeric_facts:
+  - "Modern deep networks routinely have tens of millions to hundreds of billions of parameters."
+  - "Learning rates for SGD are typically in the range 1e-1 to 1e-5 depending on architecture and optimizer."
+  - "Backpropagation has the same computational cost as the forward pass up to a constant factor."

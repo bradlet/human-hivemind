@@ -1,0 +1,78 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: hivemind
+      POSTGRES_PASSWORD: hivemind
+      POSTGRES_DB: hivemind
+    volumes:
+      - hivemind_pg:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hivemind -d hivemind"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    image: python:3.12-slim
+    depends_on:
+      postgres:
+        condition: service_healthy
+    working_dir: /app/backend
+    environment:
+      HIVEMIND_ENV: local
+      STORAGE_BACKEND: local
+      HIVEMIND_LOCAL_CONTENT_ROOT: /app/content
+      DATABASE_URL: postgresql+psycopg://hivemind:hivemind@postgres:5432/hivemind
+      SESSION_SECRET: dev-session-secret-change-me
+      FRONTEND_ORIGIN: http://localhost:5173
+      HIVEMIND_LOG_LEVEL: INFO
+      PYTHONPATH: /app/backend/src
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    volumes:
+      - ./backend:/app/backend
+      - ./content:/app/content
+    ports:
+      - "8080:8080"
+    command: >
+      sh -c "pip install --quiet -e ./ &&
+             uvicorn hivemind.main:app --host 0.0.0.0 --port 8080 --reload --reload-dir /app/backend/src"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request,sys; sys.exit(0 if urllib.request.urlopen(\"http://localhost:8080/api/health\", timeout=2).status==200 else 1)'"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  frontend:
+    image: node:20-alpine
+    depends_on:
+      backend:
+        condition: service_healthy
+    working_dir: /app/frontend
+    environment:
+      VITE_API_TARGET: http://backend:8080
+      # Move Vite's optimizer cache out of node_modules (and off the named
+      # volume) so it can't get into a half-committed state across restarts.
+      VITE_CACHE_DIR: /tmp/vite-cache
+      # Use polling for file watching: inotify events don't propagate through
+      # the macOS bind mount reliably and otherwise cause spurious re-optimizes.
+      VITE_USE_POLLING: "1"
+      CHOKIDAR_USEPOLLING: "1"
+    volumes:
+      - ./frontend:/app/frontend
+      - hivemind_node_modules:/app/frontend/node_modules
+      - hivemind_vite_cache:/tmp/vite-cache
+    ports:
+      - "5173:5173"
+    command: >
+      sh -c "if [ ! -d node_modules/.bin ]; then npm install --no-audit --no-fund; fi &&
+             rm -rf node_modules/.vite /tmp/vite-cache/deps_temp_* &&
+             npm run dev -- --host 0.0.0.0"
+
+volumes:
+  hivemind_pg:
+  hivemind_node_modules:
+  hivemind_vite_cache:

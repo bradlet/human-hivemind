@@ -1,0 +1,15 @@
+slug: deep-neural-networks
+title: Deep Neural Networks
+domains:
+  - computer-science
+  - artificial-intelligence
+prerequisites:
+  - linear-algebra
+authors:
+  - id: user_seed
+    role: original
+estimated_hours: 12
+difficulty: intermediate
+status: published
+version: 1
+forked_from: null

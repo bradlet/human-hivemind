@@ -1,0 +1,12 @@
+terms:
+  vector: "An element of a vector space; informally, an arrow with magnitude and direction."
+  scalar: "A single number used to stretch or shrink a vector."
+  vector space: "A set closed under vector addition and scalar multiplication with a zero element and standard algebraic laws."
+  basis: "A linearly independent set of vectors that spans a vector space."
+  linear map: "A function between vector spaces that preserves vector addition and scalar multiplication."
+  matrix: "A rectangular array of numbers; encodes a linear map between finite-dimensional vector spaces."
+  eigenvalue: "A scalar lambda such that A v = lambda v for some nonzero vector v."
+  eigenvector: "A nonzero vector v such that A v = lambda v for some scalar lambda."
+  diagonalization: "Writing A as P D P^-1, where D is diagonal and the columns of P are eigenvectors of A."
+  rank: "The dimension of the image of a linear map; equivalently, the number of linearly independent columns of its matrix."
+  kernel: "The set of vectors mapped to zero by a linear map; also called the null space."

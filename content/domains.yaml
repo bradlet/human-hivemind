@@ -1,0 +1,31 @@
+domains:
+  - slug: math-and-science
+    title: Math & Science
+    children:
+      - slug: mathematics
+        title: Mathematics
+        children:
+          - slug: linear-algebra-domain
+            title: Linear Algebra
+          - slug: calculus
+            title: Calculus
+      - slug: computer-science
+        title: Computer Science
+        children:
+          - slug: artificial-intelligence
+            title: Artificial Intelligence
+          - slug: systems
+            title: Systems
+      - slug: physics
+        title: Physics
+      - slug: chemistry
+        title: Chemistry
+      - slug: biology
+        title: Biology
+  - slug: humanities
+    title: Humanities
+    children:
+      - slug: literature
+        title: Literature
+      - slug: psychology
+        title: Psychology

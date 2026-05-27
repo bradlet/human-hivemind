@@ -1,0 +1,20 @@
+key_formulas:
+  - name: matrix-vector product
+    expression: "(Av)_i = sum_j A_ij v_j"
+    notes: Standard contracted index notation; A is m x n, v is in R^n, Av is in R^m.
+  - name: eigenvalue equation
+    expression: "A v = lambda v, v != 0"
+  - name: characteristic polynomial
+    expression: "det(A - lambda I) = 0"
+  - name: diagonalization
+    expression: "A = P D P^-1"
+    notes: "Requires n linearly independent eigenvectors; D contains eigenvalues on the diagonal."
+key_theorems:
+  - name: rank-nullity
+    statement: "For a linear map T: V -> W, dim(V) = dim(ker T) + dim(im T)."
+  - name: spectral theorem (symmetric case)
+    statement: "Every real symmetric matrix has an orthonormal basis of eigenvectors."
+numeric_facts:
+  - "Matrix multiplication is associative: A(BC) = (AB)C."
+  - "Matrix multiplication is in general not commutative: AB != BA."
+  - "The identity matrix I_n is the unique n x n matrix such that AI = IA = A for every n x n matrix A."

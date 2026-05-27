@@ -1,0 +1,14 @@
+slug: linear-algebra
+title: Linear Algebra
+domains:
+  - mathematics
+  - linear-algebra-domain
+prerequisites: []
+authors:
+  - id: user_seed
+    role: original
+estimated_hours: 8
+difficulty: beginner
+status: published
+version: 1
+forked_from: null
