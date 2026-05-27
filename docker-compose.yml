@@ -54,25 +54,17 @@ services:
     working_dir: /app/frontend
     environment:
       VITE_API_TARGET: http://backend:8080
-      # Move Vite's optimizer cache out of node_modules (and off the named
-      # volume) so it can't get into a half-committed state across restarts.
-      VITE_CACHE_DIR: /tmp/vite-cache
       # Use polling for file watching: inotify events don't propagate through
       # the macOS bind mount reliably and otherwise cause spurious re-optimizes.
       VITE_USE_POLLING: "1"
       CHOKIDAR_USEPOLLING: "1"
     volumes:
       - ./frontend:/app/frontend
-      - hivemind_node_modules:/app/frontend/node_modules
-      - hivemind_vite_cache:/tmp/vite-cache
     ports:
       - "5173:5173"
     command: >
-      sh -c "if [ ! -d node_modules/.bin ]; then npm install --no-audit --no-fund; fi &&
-             rm -rf node_modules/.vite /tmp/vite-cache/deps_temp_* &&
+      sh -c "npm install --no-audit --no-fund &&
              npm run dev -- --host 0.0.0.0"
 
 volumes:
   hivemind_pg:
-  hivemind_node_modules:
-  hivemind_vite_cache:
