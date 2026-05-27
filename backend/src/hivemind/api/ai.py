@@ -14,9 +14,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
-from hivemind.api.deps import get_db, get_storage
+from hivemind.api.deps import get_db, get_storage, require_subject
 from hivemind.api.schemas import AIFactsOut, AIGlossaryOut, AIRepresentationOut
-from hivemind.services import content_io, subject_service
+from hivemind.services import content_io
 from hivemind.storage import StorageBackend
 
 router = APIRouter(prefix="/subjects/{slug}/ai", tags=["ai"])
@@ -25,9 +25,7 @@ router = APIRouter(prefix="/subjects/{slug}/ai", tags=["ai"])
 def _build_ai_response(
     storage: StorageBackend, db: Session, slug: str
 ) -> AIRepresentationOut:
-    row = subject_service.get_subject_row(db, slug)
-    if row is None:
-        raise HTTPException(status_code=404, detail=f"Subject {slug!r} not found")
+    row = require_subject(db, slug)
     ai = content_io.load_ai_representation(storage, slug)
     current_version = row.version
     regen_from = ai.meta.regenerated_from_human_version if ai.meta else None
@@ -72,8 +70,7 @@ def get_ai_markdown(
     db: Annotated[Session, Depends(get_db)],
     storage: Annotated[StorageBackend, Depends(get_storage)],
 ) -> Response:
-    if subject_service.get_subject_row(db, slug) is None:
-        raise HTTPException(status_code=404, detail=f"Subject {slug!r} not found")
+    require_subject(db, slug)
     ai = content_io.load_ai_representation(storage, slug)
     if ai.agent is None:
         raise HTTPException(
@@ -89,8 +86,7 @@ def get_ai_facts(
     db: Annotated[Session, Depends(get_db)],
     storage: Annotated[StorageBackend, Depends(get_storage)],
 ) -> AIFactsOut:
-    if subject_service.get_subject_row(db, slug) is None:
-        raise HTTPException(status_code=404, detail=f"Subject {slug!r} not found")
+    require_subject(db, slug)
     ai = content_io.load_ai_representation(storage, slug)
     if ai.facts is None:
         return AIFactsOut()
@@ -107,8 +103,7 @@ def get_ai_glossary(
     db: Annotated[Session, Depends(get_db)],
     storage: Annotated[StorageBackend, Depends(get_storage)],
 ) -> AIGlossaryOut:
-    if subject_service.get_subject_row(db, slug) is None:
-        raise HTTPException(status_code=404, detail=f"Subject {slug!r} not found")
+    require_subject(db, slug)
     ai = content_io.load_ai_representation(storage, slug)
     if ai.glossary is None:
         return AIGlossaryOut()
