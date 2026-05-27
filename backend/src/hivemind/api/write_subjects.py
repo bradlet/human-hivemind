@@ -41,12 +41,32 @@ def _lesson_payload(lesson_in: LessonIn) -> dict[str, Any]:
     }
 
 
-async def _build_detail(
-    storage: StorageBackend, db: Session, slug: str
+async def _execute_mutation(
+    operation: MutationOperation,
+    slug: str,
+    payload: dict[str, Any],
+    *,
+    actor: User,
+    storage: StorageBackend,
+    db: Session,
+    detail_slug: str | None = None,
 ) -> SubjectDetailOut:
+    """Run a mutation pipeline and return the resulting SubjectDetailOut.
+
+    `detail_slug` overrides the slug used to load the response (fork uses the new slug).
+    """
+    ctx = MutationContext(
+        operation=operation,
+        actor=actor,
+        slug=slug,
+        payload=payload,
+        storage=storage,
+        db=db,
+    )
+    await run_pipeline(ctx, pipeline_for_operation(operation))
     from hivemind.api.subjects import get_subject
 
-    return get_subject(slug, db, storage)  # type: ignore[arg-type]
+    return get_subject(detail_slug or slug, db, storage)  # type: ignore[arg-type]
 
 
 @router.post("", response_model=SubjectDetailOut, status_code=201)
@@ -61,16 +81,10 @@ async def create_subject(
         "overview": body.overview,
         "lessons": [_lesson_payload(l) for l in body.lessons],
     }
-    ctx = MutationContext(
-        operation=MutationOperation.CREATE_SUBJECT,
-        actor=actor,
-        slug=body.slug,
-        payload=payload,
-        storage=storage,
-        db=db,
+    return await _execute_mutation(
+        MutationOperation.CREATE_SUBJECT, body.slug, payload,
+        actor=actor, storage=storage, db=db,
     )
-    await run_pipeline(ctx, pipeline_for_operation(MutationOperation.CREATE_SUBJECT))
-    return await _build_detail(storage, db, body.slug)
 
 
 @router.put("/{slug}", response_model=SubjectDetailOut)
@@ -84,16 +98,10 @@ async def update_subject(
     payload: dict[str, Any] = {"manifest": body.manifest.model_dump()}
     if body.overview is not None:
         payload["overview"] = body.overview
-    ctx = MutationContext(
-        operation=MutationOperation.UPDATE_SUBJECT,
-        actor=actor,
-        slug=slug,
-        payload=payload,
-        storage=storage,
-        db=db,
+    return await _execute_mutation(
+        MutationOperation.UPDATE_SUBJECT, slug, payload,
+        actor=actor, storage=storage, db=db,
     )
-    await run_pipeline(ctx, pipeline_for_operation(MutationOperation.UPDATE_SUBJECT))
-    return await _build_detail(storage, db, slug)
 
 
 @router.put("/{slug}/lessons/{order}", response_model=SubjectDetailOut)
@@ -110,17 +118,10 @@ async def update_lesson(
             status_code=422,
             detail=f"Lesson frontmatter.order ({body.frontmatter.get('order')}) must match URL order ({order}).",
         )
-    payload = {"lesson": _lesson_payload(body)}
-    ctx = MutationContext(
-        operation=MutationOperation.UPDATE_LESSON,
-        actor=actor,
-        slug=slug,
-        payload=payload,
-        storage=storage,
-        db=db,
+    return await _execute_mutation(
+        MutationOperation.UPDATE_LESSON, slug, {"lesson": _lesson_payload(body)},
+        actor=actor, storage=storage, db=db,
     )
-    await run_pipeline(ctx, pipeline_for_operation(MutationOperation.UPDATE_LESSON))
-    return await _build_detail(storage, db, slug)
 
 
 @router.post("/{slug}/lessons", response_model=SubjectDetailOut, status_code=201)
@@ -131,17 +132,10 @@ async def create_lesson(
     db: Annotated[Session, Depends(get_db)],
     storage: Annotated[StorageBackend, Depends(get_storage)],
 ) -> SubjectDetailOut:
-    payload = {"lesson": _lesson_payload(body)}
-    ctx = MutationContext(
-        operation=MutationOperation.CREATE_LESSON,
-        actor=actor,
-        slug=slug,
-        payload=payload,
-        storage=storage,
-        db=db,
+    return await _execute_mutation(
+        MutationOperation.CREATE_LESSON, slug, {"lesson": _lesson_payload(body)},
+        actor=actor, storage=storage, db=db,
     )
-    await run_pipeline(ctx, pipeline_for_operation(MutationOperation.CREATE_LESSON))
-    return await _build_detail(storage, db, slug)
 
 
 @router.post("/{slug}/fork", response_model=SubjectDetailOut, status_code=201)
@@ -152,17 +146,10 @@ async def fork_subject(
     db: Annotated[Session, Depends(get_db)],
     storage: Annotated[StorageBackend, Depends(get_storage)],
 ) -> SubjectDetailOut:
-    payload = {"new_slug": body.new_slug}
-    ctx = MutationContext(
-        operation=MutationOperation.FORK_SUBJECT,
-        actor=actor,
-        slug=slug,
-        payload=payload,
-        storage=storage,
-        db=db,
+    return await _execute_mutation(
+        MutationOperation.FORK_SUBJECT, slug, {"new_slug": body.new_slug},
+        actor=actor, storage=storage, db=db, detail_slug=body.new_slug,
     )
-    await run_pipeline(ctx, pipeline_for_operation(MutationOperation.FORK_SUBJECT))
-    return await _build_detail(storage, db, body.new_slug)
 
 
 @router.post("/{slug}/restore", response_model=SubjectDetailOut)
@@ -193,14 +180,7 @@ async def restore_subject(
     current = subject_service.load_state(storage, slug)
     restored_state = current.model_copy(update={"manifest": prior_manifest})
 
-    payload = {"restored_state": restored_state}
-    ctx = MutationContext(
-        operation=MutationOperation.RESTORE_VERSION,
-        actor=actor,
-        slug=slug,
-        payload=payload,
-        storage=storage,
-        db=db,
+    return await _execute_mutation(
+        MutationOperation.RESTORE_VERSION, slug, {"restored_state": restored_state},
+        actor=actor, storage=storage, db=db,
     )
-    await run_pipeline(ctx, pipeline_for_operation(MutationOperation.RESTORE_VERSION))
-    return await _build_detail(storage, db, slug)

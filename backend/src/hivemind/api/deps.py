@@ -8,9 +8,10 @@ from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from hivemind.config import Settings, get_settings
-from hivemind.db.models import UserRow
+from hivemind.db.models import SubjectRow, UserRow
 from hivemind.db.session import get_db as _get_db
 from hivemind.models.user import User
+from hivemind.services import subject_service
 from hivemind.storage import StorageBackend, build_storage
 
 _storage_singleton: StorageBackend | None = None
@@ -51,6 +52,14 @@ def current_user_optional(
     request: Request, db: Annotated[Session, Depends(get_db)]
 ) -> User | None:
     return _user_from_session(request, db)
+
+
+def require_subject(db: Session, slug: str) -> SubjectRow:
+    """Look up a SubjectRow by slug or raise the standard 404."""
+    row = subject_service.get_subject_row(db, slug)
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"Subject {slug!r} not found")
+    return row
 
 
 def current_user_required(

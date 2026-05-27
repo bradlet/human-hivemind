@@ -17,17 +17,10 @@ from dataclasses import dataclass
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from hivemind.db.models import (
-    DomainRow,
-    LessonRow,
-    SubjectAuthorRow,
-    SubjectDomainRow,
-    SubjectPrerequisiteRow,
-    SubjectRow,
-    UserRow,
-)
+from hivemind.db.models import DomainRow, SubjectDomainRow, SubjectRow
 from hivemind.logging_setup import get_logger
 from hivemind.services import content_io
+from hivemind.services.db_sync import upsert_subject_state
 from hivemind.storage.base import StorageBackend
 
 log = get_logger("hivemind.index_sync")
@@ -57,56 +50,7 @@ def _sync_domains(db: Session, storage: StorageBackend) -> int:
 def _sync_subject(db: Session, storage: StorageBackend, slug: str) -> tuple[int, int]:
     """Sync a single subject. Returns (1_if_indexed, lesson_count) on success."""
     state = content_io.load_subject_state(storage, slug)
-    manifest = state.manifest
-
-    row = db.execute(select(SubjectRow).where(SubjectRow.slug == manifest.slug)).scalar_one_or_none()
-    if row is None:
-        row = SubjectRow(slug=manifest.slug)
-        db.add(row)
-    row.title = manifest.title
-    row.status = manifest.status.value
-    row.difficulty = manifest.difficulty.value
-    row.estimated_hours = manifest.estimated_hours
-    row.version = manifest.version
-    row.forked_from_slug = manifest.forked_from.slug if manifest.forked_from else None
-    row.forked_from_version = manifest.forked_from.version if manifest.forked_from else None
-    db.flush()
-
-    db.execute(delete(SubjectDomainRow).where(SubjectDomainRow.subject_id == row.id))
-    db.execute(
-        delete(SubjectPrerequisiteRow).where(SubjectPrerequisiteRow.subject_id == row.id)
-    )
-    db.execute(delete(SubjectAuthorRow).where(SubjectAuthorRow.subject_id == row.id))
-    db.execute(delete(LessonRow).where(LessonRow.subject_id == row.id))
-
-    for d in manifest.domains:
-        db.add(SubjectDomainRow(subject_id=row.id, domain_slug=d))
-    for i, p in enumerate(manifest.prerequisites):
-        db.add(SubjectPrerequisiteRow(subject_id=row.id, prereq_slug=p, position=i))
-
-    existing_user_ids = set(
-        db.execute(
-            select(UserRow.id).where(UserRow.id.in_([a.id for a in manifest.authors]))
-        ).scalars().all()
-    )
-    for a in manifest.authors:
-        if a.id not in existing_user_ids:
-            continue
-        db.add(SubjectAuthorRow(subject_id=row.id, user_id=a.id, role=a.role.value))
-
-    for lesson in state.lessons:
-        db.add(
-            LessonRow(
-                subject_id=row.id,
-                order=lesson.frontmatter.order,
-                title=lesson.frontmatter.title,
-                estimated_minutes=lesson.frontmatter.estimated_minutes,
-                learning_objectives=list(lesson.frontmatter.learning_objectives),
-                filename=lesson.filename,
-            )
-        )
-
-    db.flush()
+    upsert_subject_state(db, state)
     return 1, len(state.lessons)
 
 

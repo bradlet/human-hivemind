@@ -12,22 +12,12 @@ mutation pipeline operates on.
 """
 from __future__ import annotations
 
-import re
 from enum import StrEnum
 from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-
-
-def _validate_slug(value: str, *, field: str) -> str:
-    if not SLUG_RE.match(value):
-        raise ValueError(
-            f"{field} must be a lowercase kebab-case slug (got {value!r}). "
-            "Allowed characters: a-z, 0-9, and hyphens; cannot start or end with a hyphen."
-        )
-    return value
+from hivemind.models.validators import validate_slug
 
 
 class Difficulty(StrEnum):
@@ -63,7 +53,7 @@ class ForkedFrom(BaseModel):
     @field_validator("slug")
     @classmethod
     def _check_slug(cls, v: str) -> str:
-        return _validate_slug(v, field="forked_from.slug")
+        return validate_slug(v, field="forked_from.slug")
 
 
 class SubjectManifest(BaseModel):
@@ -85,13 +75,13 @@ class SubjectManifest(BaseModel):
     @field_validator("slug")
     @classmethod
     def _check_slug(cls, v: str) -> str:
-        return _validate_slug(v, field="subject slug")
+        return validate_slug(v, field="subject slug")
 
     @field_validator("domains", "prerequisites")
     @classmethod
     def _check_slug_lists(cls, v: list[str]) -> list[str]:
         for s in v:
-            _validate_slug(s, field="referenced slug")
+            validate_slug(s, field="referenced slug")
         if len(set(v)) != len(v):
             raise ValueError("Duplicate slugs are not allowed in domains/prerequisites")
         return v

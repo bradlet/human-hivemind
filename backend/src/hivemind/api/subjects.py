@@ -8,7 +8,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
-from hivemind.api.deps import get_db, get_storage
+from hivemind.api.deps import get_db, get_storage, require_subject
 from hivemind.api.schemas import (
     AuthorOut,
     DependentsOut,
@@ -59,9 +59,7 @@ def get_subject(
     db: Annotated[Session, Depends(get_db)],
     storage: Annotated[StorageBackend, Depends(get_storage)],
 ) -> SubjectDetailOut:
-    row = subject_service.get_subject_row(db, slug)
-    if row is None:
-        raise HTTPException(status_code=404, detail=f"Subject {slug!r} not found")
+    row = require_subject(db, slug)
     try:
         state = subject_service.load_state(storage, slug)
     except ValueError as exc:
@@ -160,8 +158,7 @@ def get_raw_markdown(
 def get_prereqs(
     slug: str, db: Annotated[Session, Depends(get_db)]
 ) -> PrereqsOut:
-    if subject_service.get_subject_row(db, slug) is None:
-        raise HTTPException(status_code=404, detail=f"Subject {slug!r} not found")
+    require_subject(db, slug)
     nodes = subject_service.transitive_prereqs(db, slug)
     return PrereqsOut(
         slug=slug,
@@ -173,8 +170,7 @@ def get_prereqs(
 def get_dependents(
     slug: str, db: Annotated[Session, Depends(get_db)]
 ) -> DependentsOut:
-    if subject_service.get_subject_row(db, slug) is None:
-        raise HTTPException(status_code=404, detail=f"Subject {slug!r} not found")
+    require_subject(db, slug)
     deps = subject_service.dependents(db, slug)
     return DependentsOut(
         slug=slug, dependents=[SubjectSummaryOut.model_validate(r) for r in deps]
