@@ -1,3 +1,4 @@
+// DEPRECATED: replaced by DomainCardBrowser. Retained for compatibility.
 import { Link } from "react-router-dom";
 import type { DomainNode } from "../lib/api";
 
@@ -16,7 +17,7 @@ function DomainTreeItem({ node, depth }: { node: DomainNode; depth: number }) {
     <li>
       <Link
         to={`/d/${node.slug}`}
-        className="block hover:bg-ink-100 rounded px-2 py-1 text-ink-800"
+        className="block hover:bg-ink-100 dark:hover:bg-ink-800 rounded px-2 py-1 text-ink-800 dark:text-ink-200 transition-colors"
         style={{ paddingLeft: `${depth * 14 + 8}px` }}
       >
         {node.title}

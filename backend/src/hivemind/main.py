@@ -23,7 +23,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 from starlette.middleware.sessions import SessionMiddleware
 
-from hivemind.api import ai, auth, domains, subjects, write_subjects
+from hivemind.api import ai, auth, domains, images, subjects, write_subjects
 from hivemind.api.deps import get_storage
 from hivemind.config import Settings, get_settings
 from hivemind.db.models import SubjectRow
@@ -116,6 +116,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(ai.router, prefix="/api")
     app.include_router(write_subjects.router, prefix="/api")
     app.include_router(auth.router, prefix="/api")
+    app.include_router(images.router, prefix="/api")
 
     @app.get("/api/health")
     def health() -> dict[str, str]:
